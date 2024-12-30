@@ -1,0 +1,58 @@
+# Mobile alert configuration for Phillip Corey Roark
+
+notificationConfig:
+  default_mobile:
+    type: "sms"
+    number: "${PHILLIP_MOBILE}"
+    priority: "high"
+
+alertPolicies:
+  - displayName: "Critical Authentication Alerts"
+    conditions:
+      - filter: 'metric.type="custom.googleapis.com/github/auth_failures" AND metric.labels.severity="critical"'
+        threshold: 1
+        duration: "0s"
+      - filter: 'metric.type="custom.googleapis.com/github/token_revocation"'
+        threshold: 1
+        duration: "0s"
+    notificationChannels: ["${PHILLIP_MOBILE_CHANNEL}"]
+    alertStrategy:
+      notificationRateLimit:
+        period: "300s"
+
+  - displayName: "Workload Identity Federation Alerts"
+    conditions:
+      - filter: 'metric.type="custom.googleapis.com/github/federation_failures"'
+        threshold: 1
+        duration: "60s"
+    notificationChannels: ["${PHILLIP_MOBILE_CHANNEL}"]
+
+  - displayName: "OAuth Key Rotation Alerts"
+    conditions:
+      - filter: 'metric.type="custom.googleapis.com/github/key_rotation_status"'
+        threshold: 1
+        duration: "0s"
+    notificationChannels: ["${PHILLIP_MOBILE_CHANNEL}"]
+
+  - displayName: "Security Breach Attempts"
+    conditions:
+      - filter: 'metric.type="custom.googleapis.com/github/security_violations"'
+        threshold: 1
+        duration: "0s"
+    notificationChannels: ["${PHILLIP_MOBILE_CHANNEL}"]
+    alertStrategy:
+      notificationRateLimit:
+        period: "60s"  # Immediate notification for security issues
+
+  - displayName: "Deployment Status Alerts"
+    conditions:
+      - filter: 'metric.type="custom.googleapis.com/github/deployment_status" AND metric.labels.status="failed"'
+        threshold: 1
+        duration: "0s"
+    notificationChannels: ["${PHILLIP_MOBILE_CHANNEL}"]
+
+escalationPolicies:
+  criticalIssues:
+    initial_delay: "0s"
+    notification_channel: "${PHILLIP_MOBILE_CHANNEL}"
+    retry_period: "300s"  # Retry every 5 minutes until acknowledged
