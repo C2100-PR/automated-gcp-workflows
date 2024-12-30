@@ -1,0 +1,92 @@
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - env: ${args.environment}
+          - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - oauth_brand: ${sys.get_env("OAUTH_BRAND_ID")}
+    
+    - get_current_keys:
+        call: googleapis.iap.v1.identityAwareProxyClients.list
+        args:
+          parent: ${oauth_brand}
+        result: current_keys
+    
+    - create_new_key:
+        call: googleapis.iap.v1.identityAwareProxyClients.create
+        args:
+          parent: ${oauth_brand}
+          body:
+            displayName: $${"GitHub Integration " + env + " " + string(time.now())}
+            secret:
+              data: ${base64.encode(text.encode(uuid.new()))}
+        result: new_key
+    
+    - update_github_secrets:
+        call: googleapis.secretmanager.v1.projects.secrets.versions.create
+        args:
+          parent: ${"projects/" + project_id + "/secrets/OAUTH_CLIENT_" + env}
+          body:
+            payload:
+              data: ${new_key.secret}
+    
+    - validate_new_key:
+        call: validateOAuthKey
+        args:
+          key_id: ${new_key.name}
+          env: ${env}
+        result: validation_result
+    
+    - cleanup_old_keys:
+        switch:
+          - condition: ${validation_result}
+            steps:
+              - delete_old:
+                  for:
+                    value: key
+                    in: ${current_keys.identityAwareProxyClients}
+                    steps:
+                      - delete_key:
+                          call: googleapis.iap.v1.identityAwareProxyClients.delete
+                          args:
+                            name: ${key.name}
+    
+    - notify_rotation:
+        call: googleapis.pubsub.v1.projects.topics.publish
+        args:
+          topic: ${"projects/" + project_id + "/topics/key-rotation-notifications"}
+          body:
+            messages:
+              - data: ${base64.encode(text.encode("Successfully rotated OAuth keys for " + env))}
+
+validateOAuthKey:
+  params: [key_id, env]
+  steps:
+    - test_key:
+        try:
+          steps:
+            - call_test_endpoint:
+                call: http.post
+                args:
+                  url: ${"https://api-test-endpoint-" + env + ".example.com/verify"}
+                  auth:
+                    type: OIDC
+                    audience: ${key_id}
+                result: test_result
+            - check_result:
+                switch:
+                  - condition: ${test_result.status_code == 200}
+                    return: true
+                  - condition: ${true}
+                    return: false
+        except:
+          as: e
+          steps:
+            - log_error:
+                call: sys.log
+                args:
+                  text: ${"Key validation failed: " + string(e)}
+                  severity: ERROR
+            - return_false:
+                return: false
