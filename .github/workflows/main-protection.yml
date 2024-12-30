@@ -1,0 +1,30 @@
+name: Main Branch Protection
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch protection
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+            echo "⛔ Direct pushes to main branch are not allowed"
+            exit 1
+          fi
+      
+      - uses: actions/checkout@v3
+      
+      - name: Validate repository structure
+        run: |
+          required_dirs=(".github/workflows" "automation" "config" "docs")
+          for dir in "${required_dirs[@]}"; do
+            if [ ! -d "$dir" ]; then
+              echo "❌ Required directory $dir is missing"
+              exit 1
+            fi
+          done
