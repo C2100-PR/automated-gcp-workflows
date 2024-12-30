@@ -1,0 +1,27 @@
+# Security Workflow Configuration
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Branch Protection Check
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+            echo "❌ Direct pushes to main branch are not allowed"
+            exit 1
+          fi
+
+      - name: Security Audit
+        run: |
+          echo "Running security audit..."
+          # Add security scanning steps here
