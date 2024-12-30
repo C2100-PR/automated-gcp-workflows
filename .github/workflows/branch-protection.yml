@@ -1,0 +1,30 @@
+name: Branch Protection Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  protection-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Verify Branch Protection
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "⚠️ Direct pushes to main branch should be blocked"
+            exit 1
+          fi
+      
+      - name: Check PR Reviews
+        if: github.event_name == 'pull_request'
+        run: |
+          if [[ "${{ github.event.pull_request.reviews_count }}" -lt 1 ]]; then
+            echo "⚠️ Pull request requires at least one review"
+            exit 1
+          fi
