@@ -1,0 +1,13 @@
+# Project labels for API-FOR-WARP-DRIVE
+project_labels:
+  project_id: "api-for-warp-drive"
+  environment: "production"
+  criticality: "high"
+  owner: "phillip-corey-roark"
+  security_level: "confidential"
+  alert_priority: "critical"
+  service_type: "api"
+  cost_center: "warp-drive-operations"
+  business_unit: "warp-drive"
+  deployment_type: "continuous"
+  monitoring_level: "enhanced"
