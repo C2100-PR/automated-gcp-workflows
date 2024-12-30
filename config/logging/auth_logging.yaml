@@ -1,0 +1,59 @@
+# Advanced authentication logging configuration
+logConfig:
+  - logName: "projects/${PROJECT_ID}/logs/github-auth-detailed"
+    filter: |
+      resource.type=("iam" OR "identity_pool" OR "oauth2")
+      severity>=INFO
+    description: "Detailed authentication logging"
+
+  - logName: "projects/${PROJECT_ID}/logs/github-auth-security"
+    filter: |
+      resource.type=("iam" OR "identity_pool" OR "oauth2")
+      severity>=WARNING
+      jsonPayload.event_type=("auth_failure" OR "permission_denied" OR "token_revoked")
+    description: "Security-related authentication events"
+
+  - logName: "projects/${PROJECT_ID}/logs/github-auth-audit"
+    filter: |
+      resource.type=("iam" OR "identity_pool" OR "oauth2")
+      severity>=INFO
+      jsonPayload.event_type=("credential_rotation" OR "permission_change" OR "configuration_update")
+    description: "Audit events for authentication changes"
+
+metricDescriptors:
+  - name: "custom.googleapis.com/github/auth_failures"
+    metricKind: DELTA
+    valueType: INT64
+    labels:
+      - key: environment
+        valueType: STRING
+      - key: failure_type
+        valueType: STRING
+      - key: workflow_name
+        valueType: STRING
+
+  - name: "custom.googleapis.com/github/token_usage"
+    metricKind: DELTA
+    valueType: INT64
+    labels:
+      - key: environment
+        valueType: STRING
+      - key: token_type
+        valueType: STRING
+      - key: workflow_name
+        valueType: STRING
+
+alerts:
+  - name: "High Auth Failure Rate"
+    filter: |
+      metric.type="custom.googleapis.com/github/auth_failures"
+      resource.type="global"
+    conditions:
+      - threshold: 10
+        duration: 300s
+        comparison: COMPARISON_GT
+    notifications:
+      - channel: "slack"
+        channelName: "${SLACK_SECURITY_CHANNEL}"
+      - channel: "email"
+        address: "${SECURITY_EMAIL}"
