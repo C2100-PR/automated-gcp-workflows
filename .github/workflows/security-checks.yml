@@ -1,0 +1,25 @@
+name: Security Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main, develop ]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Security Scan
+        run: |
+          # Add security scanning steps
+          echo "Running security checks..."
+          
+      - name: Branch Protection Verify
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ github.event_name }}" == "push" ]]; then
+            echo "Direct pushes to main branch are not allowed"
+            exit 1
+          fi
