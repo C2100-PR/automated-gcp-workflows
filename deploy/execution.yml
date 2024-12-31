@@ -1,0 +1,10 @@
+steps:
+  - name: Deploy Security
+    action: execute
+    status: in_progress
+  - name: Deploy Workflows
+    action: execute
+    status: pending
+  - name: Verify Integration
+    action: execute
+    status: pending
