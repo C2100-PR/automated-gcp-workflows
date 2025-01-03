@@ -1,0 +1,42 @@
+name: Development Pipeline
+
+on:
+  push:
+    branches: [ develop, feature/*, fix/* ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  test:
+    name: Development Tests
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_DEV_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_DEV_SA_KEY }}
+      
+      - name: Run Integration Tests
+        run: |
+          cd tests/integration
+          chmod +x workflow_tests.sh
+          ./workflow_tests.sh
+      
+      - name: Deploy to Dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        run: |
+          cd automation
+          ./run.sh --environment=development
+      
+      - name: Update Dev Status
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const script = require('./.github/workflows/notify.js')
+            await script({github, context, core, environment: 'development'})

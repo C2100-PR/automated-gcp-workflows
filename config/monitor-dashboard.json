@@ -1,0 +1,32 @@
+{
+  "displayName": "GitHub Workflows Dashboard",
+  "gridLayout": {
+    "columns": 2,
+    "widgets": [
+      {
+        "title": "Authentication Failures",
+        "xyChart": {
+          "dataSets": [{
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"logging.googleapis.com/user/github_auth_failures\""
+              }
+            }
+          }]
+        }
+      },
+      {
+        "title": "API Latency",
+        "xyChart": {
+          "dataSets": [{
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"logging.googleapis.com/user/github_api_latency\""
+              }
+            }
+          }]
+        }
+      }
+    ]
+  }
+}

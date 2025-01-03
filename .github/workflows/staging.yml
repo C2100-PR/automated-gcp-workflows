@@ -1,0 +1,55 @@
+name: Staging Pipeline
+
+on:
+  push:
+    branches: [ staging ]
+  workflow_dispatch:
+    inputs:
+      confirm_deployment:
+        description: 'Confirm staging deployment'
+        required: true
+        type: boolean
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_STAGING_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_STAGING_SA_KEY }}
+      
+      - name: Run Integration Tests
+        run: |
+          cd tests/integration
+          chmod +x workflow_tests.sh
+          ./workflow_tests.sh
+      
+      - name: Deploy to Staging
+        run: |
+          cd automation
+          ./run.sh --environment=staging
+      
+      - name: Validate Staging Deployment
+        run: |
+          cd automation
+          ./validate.sh --environment=staging
+      
+      - name: Monitor Staging
+        run: |
+          cd automation
+          ./monitor.sh --environment=staging
+      
+      - name: Update Staging Status
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const script = require('./.github/workflows/notify.js')
+            await script({github, context, core, environment: 'staging'})

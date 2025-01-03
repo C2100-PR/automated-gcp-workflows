@@ -1,0 +1,89 @@
+{
+  "displayName": "Enhanced GitHub Workflows Dashboard",
+  "gridLayout": {
+    "columns": 2,
+    "widgets": [
+      {
+        "title": "Workflow Performance",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/workflow_execution_time\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_PERCENTILE_95"
+                  }
+                }
+              },
+              "plotType": "LINE",
+              "legendTemplate": "95th percentile"
+            },
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"logging.googleapis.com/user/workflow_execution_time\"",
+                  "aggregation": {
+                    "alignmentPeriod": "60s",
+                    "perSeriesAligner": "ALIGN_MEAN"
+                  }
+                }
+              },
+              "plotType": "LINE",
+              "legendTemplate": "Mean"
+            }
+          ]
+        }
+      },
+      {
+        "title": "Error Distribution",
+        "pieChart": {
+          "dataSets": [{
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"logging.googleapis.com/user/github_error_types\"",
+                "aggregation": {
+                  "alignmentPeriod": "300s",
+                  "crossSeriesReducer": "REDUCE_SUM",
+                  "groupByFields": ["metric.label.error_type"]
+                }
+              }
+            }
+          }]
+        }
+      },
+      {
+        "title": "API Rate Limiting",
+        "gaugeChart": {
+          "dataSets": [{
+            "timeSeriesQuery": {
+              "timeSeriesFilter": {
+                "filter": "metric.type=\"logging.googleapis.com/user/github_api_quota_remaining\""
+              }
+            }
+          }]
+        }
+      },
+      {
+        "title": "Workflow Success Rate",
+        "scorecard": {
+          "timeSeriesQuery": {
+            "timeSeriesFilter": {
+              "filter": "metric.type=\"logging.googleapis.com/user/workflow_success_rate\"",
+              "aggregation": {
+                "alignmentPeriod": "300s",
+                "perSeriesAligner": "ALIGN_MEAN"
+              }
+            }
+          },
+          "thresholds": [
+            {"value": 95, "color": "GREEN"},
+            {"value": 90, "color": "YELLOW"},
+            {"value": 0, "color": "RED"}
+          ]
+        }
+      }
+    ]
+  }
+}
